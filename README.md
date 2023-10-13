@@ -29,7 +29,7 @@ The main loop runs continuously and performs the following actions:
 5. Compute the control output using the PID equation: `output = Kp * error + Ki * integral + Kd * derivative`.
 6. Limit the control output to a certain range to avoid saturation. In this code, it's limited between 0 and 3.3 volts.
 7. Update the previous error for the next iteration.
-8. Add a time delay of 0.1 seconds using the `time.sleep` function to set the sampling time for the controller.
+8. Add a time delay of 0.01 seconds using the `time.sleep` function to set the sampling time for the controller.
 
 ### Control Output
 
