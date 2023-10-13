@@ -1,6 +1,6 @@
 # Espresso Machine PID Temperature Control Code
 
-This README provides an overview of code that demonstrates a Proportional-Integral-Derivative (PID) temperature control system. The code is designed to control the temperature of a Rancilio Silvia espresso machine such that it reaches and maintain a setpoint temperature using PID control.
+This README provides an overview of code that demonstrates a Proportional-Integral-Derivative (PID) temperature control system. The code is designed to control the temperature of a Rancilio Silvia espresso machine such that it reaches and maintains a setpoint temperature using PID control.
 
 ## Code Overview
 
