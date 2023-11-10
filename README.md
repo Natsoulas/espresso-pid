@@ -4,7 +4,7 @@ This README provides an overview of code that demonstrates a Proportional-Integr
 
 ## Code Overview
 
-The code snippet contains pseudocode for a basic implementation of a PID controller for temperature regulation. It includes the following components:
+The code snippet contains Arduino C++ code for a basic implementation of a PID controller for brew temperature regulation. This code runs on an Arduino Uno microcontroller. The software consists of the following components:
 
 ### PID Controller Parameters
 
@@ -29,11 +29,11 @@ The main loop runs continuously and performs the following actions:
 5. Compute the control output using the PID equation: `output = Kp * error + Ki * integral + Kd * derivative`.
 6. Limit the control output to a certain range to avoid saturation. In this code, it's limited between 0 and 3.3 volts.
 7. Update the previous error for the next iteration.
-8. Add a time delay of 0.01 seconds using the `time.sleep` or `usleep` function to set the sampling time for the controller.
+8. Add a time delay of 0.01 seconds using the `delay` function to set the sampling time for the controller.
 
 ### Control Output
 
-The code caps the control output by determining whether the output is above 3.3V or not. The microcontroller in use can only output 3.3V so the cap is set there to avoid saturation. Another thing to note is that the activation voltage of the Solid State Relay in use is 3V.
+The code caps the control output by determining whether the output is above 3.3V or not. The microcontroller in use can only output 3.3V, so the cap is set there to avoid saturation. Another thing to note is that the activation voltage of the Solid State Relay in use is 3V.
 
 ## Usage
 
@@ -41,4 +41,5 @@ This code serves as a basic example of a PID controller for temperature control.
 
 ## Disclaimer
 
-This code is in development and should not be used for real-world temperature control without proper testing, calibration, and safety considerations. Temperature control systems can be critical, and any implementation should be thoroughly validated and tested to ensure safe and reliable operation.
+This code is for a specific system and should not be used for espresso machine temperature control without proper testing, calibration, and safety considerations. Temperature control systems can be critical, and any implementation should be thoroughly validated and tested to ensure safe and reliable operation.
+
