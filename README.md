@@ -4,7 +4,7 @@ This README provides an overview of code that demonstrates a Proportional-Integr
 
 ## Code Overview
 
-The code snippet contains Arduino C++ code for a basic implementation of a PID controller for brew temperature regulation. This code runs on an Arduino Uno microcontroller. The software consists of the following components:
+The pid_controller.cpp file contains Arduino C++ code for a basic implementation of a PID controller for brew temperature regulation. This code runs on an Arduino Uno microcontroller. The software consists of the following components:
 
 ### PID Controller Parameters
 
@@ -43,3 +43,34 @@ This code serves as a basic example of a PID controller for temperature control.
 
 This code is for a specific system and should not be used for espresso machine temperature control without proper testing, calibration, and safety considerations. Temperature control systems can be critical, and any implementation should be thoroughly validated and tested to ensure safe and reliable operation.
 
+# Simulation README
+
+This simulation demonstrates a basic implementation of a Proportional-Integral-Derivative (PID) temperature control system. The simulation runs for approximately 5 seconds, mimicking the duration of a shot of espresso. It calculates and records temperature, time, and control output voltage data, which is saved to a CSV file.
+
+## Files
+
+- `simulation.cpp`: C++ code for the simulation.
+- `Makefile`: Makefile for compiling and running the simulation.
+- `plot_data.py`: Python script for plotting simulation data.
+
+## Running the Simulation
+
+1. **Compile the Simulation:**
+   - Open a terminal in the simulation directory.
+   - Run `make` to compile the simulation.
+
+2. **Run the Simulation:**
+   - Execute `./simulation` to run the simulation.
+   - The simulation data will be saved in `simulation_data.csv`.
+
+3. **Plot Simulation Data:**
+   - Ensure you have Python installed.
+   - Install required libraries by running `pip install pandas matplotlib`.
+   - Run `python plot_data.py` to visualize temperature and control output over time.
+
+## Important Notes
+
+- Adjust simulation parameters in `simulation.cpp` as needed.
+- The provided Python script assumes the CSV file structure and requires `pandas` and `matplotlib`.
+
+Feel free to customize and extend this simulation for your specific requirements.
