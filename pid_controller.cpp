@@ -2,185 +2,154 @@
 #include <SPI.h>
 #include "Adafruit_MAX31855.h"
 
-// Initialize variable to store the start time
-unsigned long startTime = 0;
-
-// Set sampling time.
-// Adjust based on control system design.
+// Constants for sampling time and printing modes
 const int Ts = 10; // milliseconds
-
-// Initialize constants for printing in "testing" mode;
-int print_interval = 50;
+const int print_interval = 50;
+const bool print_csv = true;
 int iteration = 1;
 
-// Use csv printing mode?
-// If false, the print mode is "testing".
-bool print_csv = true;
-
-// Assign control output pin.
-// Make sure the arduino pin assigned has PWM support (labelled with a sine wave).
+// Pin assignments
 const int controlPin = 9;
+const int MAXDO_BREW = 4, MAXCS_BREW = 7, MAXCLK_BREW = 8;
+const int MAXDO_BOILER = 12, MAXCS_BOILER = 11, MAXCLK_BOILER = 2;
 
-// PID gains for t_brew
-const double Kp_brew = 1.2; // Proportional
-const double Ki_brew = 0.078; // Integral
-const double Kd_brew = 0.08; // Derivative
+// PID gains
+const double Kp_brew = 1.2, Ki_brew = 0.078, Kd_brew = 0.08;
+const double Kp_boiler = 1.0, Ki_boiler = 0.0, Kd_boiler = 0.3;
 
-// PID gains for t_boiler
-const double Kp_boiler = 1.0; // Proportional
-const double Ki_boiler = 0.0; // Integral
-const double Kd_boiler = 0.3; // Derivative
+// Voltage range
+const double min_voltage = 5, max_voltage = 255;
 
-// Controller outputs either a minimum or maximum voltage.
-// Arduino scales 0-255 to 0-5V.
-// Min = SSR->off (still completes circuit).
-// Max = SSR->on.
-// When circuit is incomplete, operation of brew switch is off-nominal.
-const double min_voltage = 5;
-const double max_voltage = 255;
+// Setpoints and thresholds
+const double setpoint_brew = 95.0, setpoint_boiler = 98.5;
+const double brew_threshold = 90.0, boiler_error_margin = 2.0, boiler_threshold = 7.0;
 
-// Initialize variables for brew.
-const double setpoint_brew = 95.0; // degrees Celsius
-double previous_error_brew = 0.0;
-double integral_brew = 0.0;
-const double brew_threshold = 90.0;
+// Adafruit MAX31855 instances
+Adafruit_MAX31855 thermocouple_brew(MAXCLK_BREW, MAXCS_BREW, MAXDO_BREW);
+Adafruit_MAX31855 thermocouple_boiler(MAXCLK_BOILER, MAXCS_BOILER, MAXDO_BOILER);
+
+// Variables for PID control
+unsigned long startTime = 0;
+double integral_brew = 0.0, integral_boiler = 0.0;
+double previous_error_brew = 0.0, previous_error_boiler = 0.0;
+
+// Variables for brew
 int brew_counter = 0;
 double temperature_brew_old = 22.0;
 
-// Initialize variables for boiler.
-const double setpoint_boiler = 98.5; // degrees Celsius
-double previous_error_boiler = 0.0;
-double integral_boiler = 0.0;
-double boiler_error_margin = 2.0; // Percentage error tolerance for boiler setpoint.
-double boiler_threshold = 7.0; // If PID output signal is above 7, SSR is on, otherwise it is off.
-bool boilerSetpointReached = false; // If within tolerance of setpoint, this switches to false.
+// Variables for boiler
+bool boilerSetpointReached = false;
 double temperature_boiler_old = 22.0;
+int percentage_boiler;
 
-// Thermocouples setup.
-// Brew thermocouple pins:
-#define MAXDO_BREW   4
-#define MAXCS_BREW   7
-#define MAXCLK_BREW  8
-
-// Boiler thermocouple pins:
-#define MAXDO_BOILER   12
-#define MAXCS_BOILER   11
-#define MAXCLK_BOILER  2
-
-// Assign breakoutboard pins to adafruit thermocouple reading software.
-Adafruit_MAX31855 thermocouple_brew(MAXCLK_BREW, MAXCS_BREW, MAXDO_BREW); // Thermocouple for t_brew
-Adafruit_MAX31855 thermocouple_boiler(MAXCLK_BOILER, MAXCS_BOILER, MAXDO_BOILER); // Thermocouple for t_boiler
 
 void setup() {
   Serial.begin(9600);
-
-  // Record the start time.
   startTime = millis();
-
-  // Thermocouple setup.
   Serial.println("MAX31855 test");
-  // wait for MAX chip to stabilize
   delay(1000);
   Serial.print("Initializing sensors...");
-  
+
   if (!thermocouple_brew.begin() || !thermocouple_boiler.begin()) {
     Serial.println("ERROR. Check your connections.");
     while (1) delay(10);
   }
-  
-  Serial.println("DONE.");
 
-  // Control pin setup
+  Serial.println("DONE.");
   pinMode(controlPin, OUTPUT);
 }
 
 void loop() {
-  // Record the current time
   unsigned long currentTime = millis();
-
-  // Calculate the elapsed time since the control loop started
   unsigned long elapsedTime = currentTime - startTime;
 
-  // Read thermocouples
-  double temperature_brew = thermocouple_brew.readCelsius();
-  double temperature_boiler = thermocouple_boiler.readCelsius();
+  double temperature_brew = readTemperature(thermocouple_brew, temperature_brew_old);
+  double temperature_boiler = readTemperature(thermocouple_boiler, temperature_boiler_old);
 
-  // Filter out NaN readings.
-  if (isnan(temperature_brew)) {
-    temperature_brew = temperature_brew_old;
-  }
-  if (isnan(temperature_boiler)) {
-    temperature_boiler = temperature_boiler_old;
-  }
-
-  // Save off current temperature for filtering.
-  temperature_brew_old = temperature_brew;
-  temperature_boiler_old = temperature_boiler;
-
-  // Calculate errors.
   double error_brew = setpoint_brew - temperature_brew;
   double error_boiler = setpoint_boiler - temperature_boiler;
 
-  // Calculate integral terms.
   integral_brew += error_brew;
   integral_boiler += error_boiler;
 
-  // Calculate derivative terms
   double derivative_brew = error_brew - previous_error_brew;
   double derivative_boiler = error_boiler - previous_error_boiler;
 
-  // Calculate control outputs
-  double output_brew = Kp_brew * error_brew + Ki_brew * integral_brew + Kd_brew * derivative_brew;
-  double output_boiler = Kp_boiler * error_boiler + Ki_boiler * integral_boiler + Kd_boiler * derivative_boiler;
- 
-  // Scale the outputs to match the voltage range (0-5V)
-  // Arduino writes to output
-  if (output_boiler > boiler_threshold) {
-    scaled_output_boiler = max_voltage;
-  } else if (output_boiler <= boiler_threshold) {
-    scaled_output_boiler = min_voltage;
-  } 
-  if (output_brew > boiler_threshold) {
-    scaled_output_brew = max_voltage;
-  } else if (output_brew <= boiler_threshold) {
-    scaled_output_brew = min_voltage;
-  } 
+  double output_brew = calculateOutput(Kp_brew, Ki_brew, Kd_brew, error_brew, integral_brew, derivative_brew);
+  double output_boiler = calculateOutput(Kp_boiler, Ki_boiler, Kd_boiler, error_boiler, integral_boiler, derivative_boiler);
 
-  // Check if the boiler setpoint is reached
-  if (abs(error_boiler) / setpoint_boiler * 100 < boiler_error_margin) {
-    boilerSetpointReached = true;
-  } else {
-    boilerSetpointReached = false;
+  double scaled_output_brew = scaleOutput(output_brew, boiler_threshold);
+  double scaled_output_boiler = scaleOutput(output_boiler, boiler_threshold);
+
+  updateSetpointReached(error_boiler);
+
+  bool brewstarted = checkBrewStatus(temperature_brew);
+
+  updateControlOutput(brewstarted, scaled_output_brew, scaled_output_boiler);
+
+  updatePreviousErrors(error_brew, error_boiler);
+
+  printData(elapsedTime, temperature_brew, scaled_output_brew, brewstarted, brew_counter, error_brew,
+            integral_brew, derivative_brew, temperature_boiler, scaled_output_boiler, percentage_boiler, error_boiler,
+            integral_boiler, derivative_boiler, boilerSetpointReached);
+  iteration++;
+  delay(Ts);
+}
+
+double readTemperature(Adafruit_MAX31855 &thermocouple, double &oldTemperature) {
+  double temperature = thermocouple.readCelsius();
+  if (isnan(temperature)) {
+    temperature = oldTemperature;
   }
-  
-  bool brewstarted = false;
-  // Checks if brew tc is really hot (this would indicate brew has started/ongoing.)
-  if (temperature_brew > brew_threshold){
-    brewstarted = true;
+  oldTemperature = temperature;
+  return temperature;
+}
+
+double calculateOutput(double Kp, double Ki, double Kd, double error, double &integral, double derivative) {
+  return Kp * error + Ki * integral + Kd * derivative;
+}
+
+double scaleOutput(double output, double threshold) {
+  if (output > threshold) {
+    return max_voltage;
+  } else {
+    return min_voltage;
+  }
+}
+
+void updateSetpointReached(double &error_boiler) {
+  percentage_boiler = abs(error_boiler) / setpoint_boiler * 100;
+  boilerSetpointReached = (percentage_boiler < boiler_error_margin);
+}
+
+bool checkBrewStatus(double temperature_brew) {
+  bool brewstarted = (temperature_brew > brew_threshold);
+  if (brewstarted) {
     brew_counter++;
     if (brew_counter == 1) {
-      // If brew just started (1st iteration during brew), reset integral error term.
       integral_brew = 0;
     }
-  } else {
-    brewstarted = false;
   }
+  return brewstarted;
+}
 
-  // Send the appropriate control output to the SSR
+void updateControlOutput(bool brewstarted, double scaled_output_brew, double scaled_output_boiler) {
   if (brewstarted) {
     analogWrite(controlPin, scaled_output_brew);
   } else {
     analogWrite(controlPin, scaled_output_boiler);
   }
+}
 
-  // Store the current errors for the next iteration
+void updatePreviousErrors(double error_brew, double error_boiler) {
   previous_error_brew = error_brew;
   previous_error_boiler = error_boiler;
-  iteration++;
+}
 
-  double percentage_boiler = abs(error_boiler) / setpoint_boiler * 100;
-
-  // print data in "csv mode" or "testing mode":
+void printData(unsigned long elapsedTime, double temperature_brew, double scaled_output_brew, bool brewstarted,
+               int brew_counter, double error_brew, double integral_brew, double derivative_brew,
+               double temperature_boiler, double scaled_output_boiler, double percentage_boiler,
+               double error_boiler, double integral_boiler, double derivative_boiler, bool boilerSetpointReached) {
   if (print_csv) {
     Serial.print(elapsedTime);
     Serial.print(",");
@@ -212,22 +181,17 @@ void loop() {
     Serial.print(",");
     Serial.println(boilerSetpointReached);
   } else if (iteration % print_interval == 0 && !print_csv) {
-      // Print essential variables every print interval
-      // with labels if not in print to csv mode:
-      Serial.print("Temperature Brew:");
-      Serial.println(temperature_brew); 
-      Serial.print("Brew Control Out: ");
-      Serial.println(scaled_output_brew);
-      Serial.print("Temperature Boiler: ");
-      Serial.println(temperature_boiler);
-      Serial.print("Boiler Control Out: ");
-      Serial.println(scaled_output_boiler);
-      Serial.print("Boiler Setpoint Reached? :");
-      Serial.println(boilerSetpointReached ? "1" : "0"); 
-      Serial.print("Percentage boiler error: ");
-      Serial.println(percentage_boiler);
+    Serial.print("Temperature Brew:");
+    Serial.println(temperature_brew);
+    Serial.print("Brew Control Out: ");
+    Serial.println(scaled_output_brew);
+    Serial.print("Temperature Boiler: ");
+    Serial.println(temperature_boiler);
+    Serial.print("Boiler Control Out: ");
+    Serial.println(scaled_output_boiler);
+    Serial.print("Boiler Setpoint Reached? :");
+    Serial.println(boilerSetpointReached ? "1" : "0");
+    Serial.print("Percentage boiler error: ");
+    Serial.println(percentage_boiler);
   }
-
-  // Use delay to set a sampling time for the controller.
-  delay(Ts);
 }
