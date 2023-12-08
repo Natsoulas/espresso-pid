@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Read the CSV file
-df = pd.read_csv('first_brew_success.csv', header=None)
+df = pd.read_csv('test_data/first_brew_success.csv', header=None)
 
 # Extract column names from the print statement
 columns = [
