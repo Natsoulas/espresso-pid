@@ -2,6 +2,12 @@
 
 This README provides an overview of code that demonstrates a Proportional-Integral-Derivative (PID) temperature control system. The code is designed to control the temperature of a Rancilio Silvia espresso machine such that it reaches and maintains a setpoint temperature using PID control.
 
+## Example Results:
+
+![brew](https://github.com/Natsoulas/espresso-pid/assets/95187192/4a6268e7-6a7b-4db8-8dcb-680b6ea72a48)
+
+Yes, the final version will have a filter on the temperature reading.
+
 ## Code Overview
 
 The pid_controller.cpp file contains Arduino C++ code for a basic implementation of a PID controller for brew temperature regulation. This code runs on an Arduino Uno microcontroller. The software consists of the following components:
