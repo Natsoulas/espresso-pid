@@ -2,12 +2,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Read the CSV file
-df = pd.read_csv('espresso_test_with_brew_overshotboiler.csv', header=None)
+df = pd.read_csv('first_brew_success.csv', header=None)
 
 # Extract column names from the print statement
 columns = [
     'elapsedTime',
-    'temperature_brew',
+    'temperature_brew (celsius)',
     'scaled_output_brew',
     'brewstarted',
     'brew_counter',
@@ -26,8 +26,8 @@ columns = [
 # Rename columns in the DataFrame
 df.columns = columns
 
-elapsed_time_lower_bound = 1.3575e6
-elapsed_time_upper_bound = 1.3605e6
+elapsed_time_lower_bound = 182510
+elapsed_time_upper_bound = 203292
 
 # Plot each column against the first column (elapsedTime) within the specified range
 for i, column in enumerate(columns[1:]):
@@ -37,7 +37,7 @@ for i, column in enumerate(columns[1:]):
         df[(df['elapsedTime'] >= elapsed_time_lower_bound) & (df['elapsedTime'] <= elapsed_time_upper_bound)][column]
     )
     plt.title(column)
-    plt.xlabel('Elapsed Time')
+    plt.xlabel('Elapsed Time (ms)')
     plt.ylabel(column)
 
 plt.show()

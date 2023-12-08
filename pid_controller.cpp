@@ -1,32 +1,39 @@
 #include <Arduino.h>
 #include <SPI.h>
-#include "Adafruit_MAX31855.h"
 
 // Constants for sampling time and printing modes
-const int Ts = 10; // milliseconds
+const int Ts = 1; // milliseconds
 const int print_interval = 50;
 const bool print_csv = true;
 int iteration = 1;
 
 // Pin assignments
 const int controlPin = 9;
-const int MAXDO_BREW = 4, MAXCS_BREW = 7, MAXCLK_BREW = 8;
-const int MAXDO_BOILER = 12, MAXCS_BOILER = 11, MAXCLK_BOILER = 2;
 
 // PID gains
-const double Kp_brew = 1.2, Ki_brew = 0.078, Kd_brew = 0.08;
-const double Kp_boiler = 1.0, Ki_boiler = 0.0, Kd_boiler = 0.3;
+const double Kp_brew = 1, Ki_brew = 0.001, Kd_brew = 10;
+const double Kp_boiler = 10, Ki_boiler = 0.00001, Kd_boiler = 15;
 
 // Voltage range
-const double min_voltage = 5, max_voltage = 255;
+const double min_voltage = 1, max_voltage = 255;
 
 // Setpoints and thresholds
-const double setpoint_brew = 95.0, setpoint_boiler = 98.5;
-const double brew_threshold = 90.0, boiler_error_margin = 2.0, boiler_threshold = 7.0;
+const double setpoint_brew = 95.0, setpoint_boiler = 105.0;
+const double brew_threshold = 90.0, boiler_error_margin = 1.0, boiler_threshold = 20.0;
 
-// Adafruit MAX31855 instances
-Adafruit_MAX31855 thermocouple_brew(MAXCLK_BREW, MAXCS_BREW, MAXDO_BREW);
-Adafruit_MAX31855 thermocouple_boiler(MAXCLK_BOILER, MAXCS_BOILER, MAXDO_BOILER);
+
+// Adafruit AD8495 instances (Thermocouple breakout board)
+int     analogPin_brew = A0;     // Pin for brew thermocouple
+int     val_brew = 0;      // variable to store the ADC value from A0
+float   temperature_brew;  // Temperature value in celsius degree
+float   setup_gain_brew = 0.005;
+float   setup_ref_brew  = 1.26313;
+
+int     analogPin_boiler = A1;     // Pin for brew thermocouple
+int     val_boiler = 0;      // variable to store the ADC value from A1
+float   temperature_boiler;  // Temperature value in celsius degree
+float   setup_gain_boiler = 0.005;
+float   setup_ref_boiler  = 1.26313;
 
 // Variables for PID control
 unsigned long startTime = 0;
@@ -45,16 +52,6 @@ int percentage_boiler;
 
 void setup() {
   Serial.begin(9600);
-  startTime = millis();
-  Serial.println("MAX31855 test");
-  delay(1000);
-  Serial.print("Initializing sensors...");
-
-  if (!thermocouple_brew.begin() || !thermocouple_boiler.begin()) {
-    Serial.println("ERROR. Check your connections.");
-    while (1) delay(10);
-  }
-
   Serial.println("DONE.");
   pinMode(controlPin, OUTPUT);
 }
@@ -63,8 +60,13 @@ void loop() {
   unsigned long currentTime = millis();
   unsigned long elapsedTime = currentTime - startTime;
 
-  double temperature_brew = readTemperature(thermocouple_brew, temperature_brew_old);
-  double temperature_boiler = readTemperature(thermocouple_boiler, temperature_boiler_old);
+  // double temperature_brew = readTemperature(thermocouple_brew, temperature_brew_old);
+  // double temperature_boiler = readTemperature(thermocouple_boiler, temperature_boiler_old);
+  val_brew = analogRead(analogPin_brew);                   // read the input pin
+  double temperature_brew = (float(val_brew) * setup_gain_brew - setup_ref_brew)/0.005 ; 
+
+  val_boiler = analogRead(analogPin_boiler);                   // read the input pin
+  double temperature_boiler = (float(val_boiler) * setup_gain_boiler - setup_ref_boiler)/0.005 ; 
 
   double error_brew = setpoint_brew - temperature_brew;
   double error_boiler = setpoint_boiler - temperature_boiler;
@@ -96,14 +98,6 @@ void loop() {
   delay(Ts);
 }
 
-double readTemperature(Adafruit_MAX31855 &thermocouple, double &oldTemperature) {
-  double temperature = thermocouple.readCelsius();
-  if (isnan(temperature)) {
-    temperature = oldTemperature;
-  }
-  oldTemperature = temperature;
-  return temperature;
-}
 
 double calculateOutput(double Kp, double Ki, double Kd, double error, double &integral, double derivative) {
   return Kp * error + Ki * integral + Kd * derivative;
