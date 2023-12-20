@@ -7,6 +7,10 @@ The software in the file named "pid_controller.cpp" is a Proportional-Integral-D
 
 This PID algorithm outperforms the thermostat control by brewing with an order of magnitude smaller variance in water temperature and reaches within one degree Celsius of its setpoint temperature. For a full performance comparison, refer to the report.
 
+Here is the comparison of brew temperature distribution using bell curves generated from the mean and variance of both data from the thermostat(default) and PID control methods:
+
+![bell_curves](https://github.com/Natsoulas/espresso-pid/assets/95187192/b312a5cc-1674-448b-901c-e057540eaf49)
+
 ## Code Overview
 
 The `pid_controller.cpp` file contains Arduino C++ code for a basic implementation of a PID-based control algorithm designed for brew temperature regulation. The software comprises the following components:
