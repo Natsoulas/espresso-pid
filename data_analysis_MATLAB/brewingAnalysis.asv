@@ -1,0 +1,49 @@
+function brewingAnalysis
+
+range0 = [90,100];
+range1 = [94,100];
+range2 = [84, 89];
+
+[~, ybrew1] = espresso_curve_fit('PID_Channel_Set106_01.csv',range1);
+[~, ybrew2] = espresso_curve_fit('PID_Channel_Set106_02.csv',range1);
+[~, ybrew3] = espresso_curve_fit('PID_Channel_Set106_03.csv',range1);
+PIDbrewAvg01 = mean(ybrew1);
+PIDbrewAvg02 = mean(ybrew2);
+PIDbrewAvg03 = mean(ybrew3);
+
+PID_array=[PIDbrewAvg01,PIDbrewAvg02,PIDbrewAvg03];
+PID_mega = [ybrew1;ybrew2;ybrew3];
+PID_mega = PID_mega';
+
+
+
+[~, yOG1] = espresso_curve_fit('OG_Channel_01.csv',range1);
+[~, yOG2] = espresso_curve_fit('OG_Channel_01.csv',range2);
+[~, yOG3] = espresso_curve_fit('OG_Channel_01.csv',range1);
+
+OGbrewAvg01 = mean(yOG1);
+OGbrewAvg02 = mean(yOG2);
+OGbrewAvg03 = mean(yOG3);
+
+
+% OG_array=[OGbrewAvg01,OGbrewAvg02,OGbrewAvg03];
+OG_array=[OGbrewAvg01,OGbrewAvg02,OGbrewAvg03];
+OG_mega = [yOG1;yOG2;yOG3];
+OG_mega = OG_mega';
+
+meanPID = mean(PID_array)
+covPID = var(PID_array)
+
+
+meanOG = mean(OG_array)
+covOG = var(OG_array)
+
+
+
+meanPIDmega = mean(PID_mega)
+varPIDmega = var(PID_mega)
+
+
+meanOGmega = mean(OG_mega)
+varOGmega = var(OG_mega)
+

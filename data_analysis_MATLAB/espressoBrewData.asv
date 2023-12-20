@@ -1,0 +1,41 @@
+function espressoBrewData
+
+% espresso_curve_fit('PID_Channel_94_01.csv')
+% title('Brew Temperature During Heat Up PID Run 01')
+% 
+% espresso_curve_fit('PID_Channel_94_02.csv')
+% title('Brew Temperature During Heat Up PID Run 02')
+% 
+% espresso_curve_fit('PID_Channel_94_03.csv')
+% title('Brew Temperature During Heat Up PID Run 03')
+% 
+% espresso_curve_fit('PID_Channel_94_04.csv')
+% title('Brew Temperature During Heat Up PID Run 04')
+% 
+% 
+% espresso_curve_fit('PID_Channel_94_05.csv')
+% title('Brew Temperature During Heat Up PID Run 05')
+
+espresso_curve_fit('PID_Channel_Set106_01.csv')
+title('Brew Temperature During Heat Up PID High Setpoint Run 01')
+
+espresso_curve_fit('PID_Channel_Set106_02.csv')
+title('Brew Temperature During Heat Up PID High Setpoint Run 02')
+
+espresso_curve_fit('PID_Channel_Set107_03.csv')
+title('Brew Temperature During Heat Up PID High Setpoint Run 03')
+
+
+espresso_curve_fit('OG_Channel_01.csv')
+title('Brew Temperature During Heat Up OG Machine Run 01')
+
+% espresso_curve_fit('OG_Channel_02.csv')  %%%NEED TO CHANGE target range
+% 84 to 88
+% title('Brew Temperature During Heat Up OG Machine Run 02')
+
+espresso_curve_fit('OG_Channel_03.csv')
+title('Brew Temperature During Heat Up OG Machine Run 03')
+
+
+
+

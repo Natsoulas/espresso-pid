@@ -18,7 +18,7 @@ const double Kp_boiler = 10, Ki_boiler = 0.00001, Kd_boiler = 15;
 const double min_voltage = 1, max_voltage = 255;
 
 // Setpoints and thresholds
-const double setpoint_brew = 95.0, setpoint_boiler = 105.0;
+const double setpoint_brew = 95.0, setpoint_boiler = 106.0;
 const double brew_threshold = 90.0, boiler_error_margin = 1.0, boiler_threshold = 20.0;
 
 

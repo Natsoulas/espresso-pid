@@ -1,53 +1,62 @@
 # Espresso Machine PID Temperature Control Code
 
-This README provides an overview of code that demonstrates a Proportional-Integral-Derivative (PID) temperature control system. The code is designed to control the temperature of a Rancilio Silvia espresso machine such that it reaches and maintains a setpoint temperature using PID control.
+The software in the file named "pid_controller.cpp" is a Proportional-Integral-Derivative (PID) control algorithm that can be run on a microcontroler to control the temperature of a Rancilio Silvia espresso machine. This algorithm is designed around the hardware of this PID control system. The main hardware components include the espresso machine, an Arduino Uno microcontroller, a Solid State Relay (SSR), and two thermocouples. For more details please refer to the report pdf (Espress_PID_Report.pdf) in this repository.
 
-## Example Results:
 
-![brew](https://github.com/Natsoulas/espresso-pid/assets/95187192/4a6268e7-6a7b-4db8-8dcb-680b6ea72a48)
+## Comparison to the Default Thermostat Control
 
-Yes, the final version will have a filter on the temperature reading.
+This PID algorithm outperforms the thermostat control by brewing with an order of magnitude smaller variance in water temperature and reaches within one degree Celsius of its setpoint temperature. For a full performance comparison, refer to the report.
 
 ## Code Overview
 
-The pid_controller.cpp file contains Arduino C++ code for a basic implementation of a PID controller for brew temperature regulation. This code runs on an Arduino Uno microcontroller. The software consists of the following components:
+The `pid_controller.cpp` file contains Arduino C++ code for a basic implementation of a PID-based control algorithm designed for brew temperature regulation. The software comprises the following components:
 
 ### PID Controller Parameters
 
-- `Kp`: The Proportional gain. Adjusts the immediate response to the error between the setpoint and the current temperature.
-- `Ki`: The Integral gain. Adjusts the response to the accumulation of past errors over time.
-- `Kd`: The Derivative gain. Adjusts the response based on the rate of change of the error.
+- `Kp_brew`, `Ki_brew`, `Kd_brew`: The Proportional, Integral, and Derivative gains for the brew temperature control loop. These parameters fine-tune the controller's response to errors in maintaining the brew temperature controller.
+- `Kp_boiler`, `Ki_boiler`, `Kd_boiler`: Similar gains specific to the boiler temperature controller.
 
 ### Control Variables
 
-- `setpoint`: The desired temperature (in degrees Celsius) that the system should reach and maintain.
-- `previous_error`: The previous error value, used for calculating the derivative term.
-- `integral`: The integral term, which accumulates past errors.
+- `setpoint_brew`, `setpoint_boiler`: The desired temperatures (in degrees Celsius) that the system should reach and maintain for brewing and the boiler, respectively.
+- `previous_error_brew`, `previous_error_boiler`: The previous error values, used for calculating the derivative term.
+- `integral_brew`, `integral_boiler`: The integral terms, accumulating past errors over time for the respective temperature controller.
 
 ### Main PID Loop
 
 The main loop runs continuously and performs the following actions:
 
-1. Read the current temperature from a thermocouple (simulated by a static value in the code).
-2. Calculate the error as the difference between the setpoint temperature and the current temperature.
-3. Calculate the integral term by accumulating the error over time.
-4. Calculate the derivative term as the difference between the current error and the previous error.
-5. Compute the control output using the PID equation: `output = Kp * error + Ki * integral + Kd * derivative`.
-6. Limit the control output to a certain range to avoid saturation. In this code, it's limited between 0 and 3.3 volts.
-7. Update the previous error for the next iteration.
-8. Add a time delay of 0.01 seconds using the `delay` function to set the sampling time for the controller.
+1. Read the current temperatures from thermocouples (simulated by analogRead in the code) for both brewing and the boiler.
+2. Calculate the errors as the differences between the setpoint temperatures and the current temperatures.
+3. Calculate the integral terms by accumulating the errors over time.
+4. Calculate the derivative terms as the differences between the current errors and the previous errors.
+5. Compute the control outputs using the PID equation: `output = Kp * error + Ki * integral + Kd * derivative`.
+6. Limit the control outputs to a certain voltage range to prevent saturation. In this code, it's between `min_voltage` and `max_voltage`.
+7. Update the previous errors for the next iteration.
+8. Add a time delay (`Ts` milliseconds) using the `delay` function to set the sampling time for the controller.
 
 ### Control Output
 
-The code caps the control output by determining whether the output is above 3.3V or not. The microcontroller in use can only output 3.3V, so the cap is set there to avoid saturation. Another thing to note is that the activation voltage of the Solid State Relay in use is 3V.
+The code caps the control outputs based on the specified voltage range. The microcontroller can only output voltages within this range, ensuring compatibility with the activation voltage (3V) of the Solid State Relay (SSR) used in the system.
+
 
 ## Usage
 
-This code serves as a basic example of a PID controller for temperature control. To adapt it for your specific application, you will need to replace the constant input thermocouple reading with actual temperature data and ensure that the control output interfaces with your heating element or system as required.
+Following a similar design to the report and performing similar assembly and testing for this control system on a Rancilio Silvia should yield similar results. Note that the machine used in this study was the "Miss Silvia" model.
+
+## Files
+
+- `pid_controller.cpp`: C++ control algortihm code for Arduino Uno.
+- `data_processing.py`: python software for indexing and plotting CSV from Arduino.
+- `Espresso_PID_Report.pdf`: Technical report that encompassses software and hardware implementation.
+- `test_data`: directory with saved CSV files from HITL testing.
+- `espresso_sim`: C++ Simulation for espresso machine PID control.
+- `espresso_simulink`: Simulink-based Simulation for espresso machine PID control.
+- `data_analysis_MATLAB`: MATLAB scripting for test data analysis.
 
 ## Disclaimer
 
-This code is for a specific system and should not be used for espresso machine temperature control without proper testing, calibration, and safety considerations. Temperature control systems can be critical, and any implementation should be thoroughly validated and tested to ensure safe and reliable operation.
+This code is for a specific system and should not be used for espresso machine temperature control without proper testing, calibration, tuning, and safety considerations. Temperature control systems are critical to Espresso Machine operational safety, and any implementation should be thoroughly validated and tested to ensure reliability.
 
 # Simulation README
 
@@ -55,9 +64,9 @@ This simulation demonstrates a basic implementation of a Proportional-Integral-D
 
 ## Files
 
-- `simulation.cpp`: C++ code for the simulation.
-- `Makefile`: Makefile for compiling and running the simulation.
-- `plot_data.py`: Python script for plotting simulation data.
+- `espresso_sim/simulation.cpp`: C++ code for the simulation.
+- `espresso_sim/Makefile`: Makefile for compiling and running the simulation.
+- `espresso_sim/plot_data.py`: Python script for plotting simulation data.
 
 ## Running the Simulation
 
